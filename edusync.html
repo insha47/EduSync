@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EduSync</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F5F6FB; --surface:#FFFFFF; --ink:#1B1F3B; --muted:#5B6080; --line:#DDE0EE;
+  --brand:#3A3FA8; --brand-ink:#FFFFFF; --ok:#12805C; --warn:#B45309; --bad:#B42318;
+  --tint:#E8E9F8; --font-head:"Bricolage Grotesque",system-ui,sans-serif; --font:"Figtree",system-ui,sans-serif;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12142B; --surface:#1C1F3F; --ink:#ECEEFB; --muted:#A3A8CC; --line:#2F3363;
+    --brand:#8C91F2; --brand-ink:#12142B; --ok:#4CD1A0; --warn:#F2B35C; --bad:#FF8E84; --tint:#272B5A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12142B; --surface:#1C1F3F; --ink:#ECEEFB; --muted:#A3A8CC; --line:#2F3363;
+  --brand:#8C91F2; --brand-ink:#12142B; --ok:#4CD1A0; --warn:#F2B35C; --bad:#FF8E84; --tint:#272B5A; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.15}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.app{max-width:720px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header.top{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.logo{font-family:var(--font-head);font-weight:700;font-size:1.25rem;color:var(--brand);margin-right:auto}
+.pill{font-size:.8rem;padding:2px 10px;border-radius:99px;background:var(--tint);color:var(--brand);font-weight:600}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:40px;padding:0 12px;cursor:pointer}
+main{flex:1;padding:16px 16px 90px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.card h3{font-size:1.05rem;margin-bottom:8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{display:block;font-family:var(--font-head);font-size:1.7rem}
+.stat span{color:var(--muted);font-size:.9rem}
+.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.muted{color:var(--muted)}
+.sim{font-size:.78rem;background:var(--tint);color:var(--muted);padding:2px 8px;border-radius:6px}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav.bottom .inner{display:flex;width:100%;max-width:720px}
+nav.bottom button{flex:1;border:0;background:none;padding:10px 2px;min-height:56px;cursor:pointer;color:var(--muted);font-size:.7rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.bottom button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.bottom button[aria-current="page"]{color:var(--brand);font-weight:600}
+/* login */
+.login{max-width:420px;margin:0 auto;padding:32px 16px}
+.login h1{font-size:2.1rem;color:var(--brand);margin-bottom:4px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:20px 0 14px}
+.tabs button{padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;min-height:44px;font-weight:600}
+.tabs button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);min-height:44px}
+.btn{width:100%;margin-top:16px;padding:12px;border:0;border-radius:10px;background:var(--brand);color:var(--brand-ink);font-weight:600;cursor:pointer;min-height:46px}
+.err{color:var(--bad);margin-top:10px;font-weight:500}
+.hint{font-size:.88rem;color:var(--muted);margin-top:14px;padding:10px 12px;background:var(--tint);border-radius:10px}
+textarea,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:inherit;color:inherit}
+textarea{resize:vertical}
+.bar{height:8px;border-radius:99px;background:var(--tint);overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--brand)}
+.okm{color:var(--ok);margin-top:10px;font-weight:500}
+.tabs.two{grid-template-columns:repeat(2,1fr);margin:12px 0}
+.chips{display:flex;gap:6px;margin:4px 0 12px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 14px;min-height:36px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--tint);color:var(--brand);border-color:var(--brand);font-weight:600}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.tag{font-size:.78rem;padding:2px 8px;border-radius:6px;background:var(--tint);color:var(--brand);font-weight:600}
+.tag.ach{color:var(--ok)}
+.small{font-size:.85rem}
+.sbtn{border:1px solid var(--brand);background:transparent;color:var(--brand);border-radius:10px;min-height:40px;padding:0 14px;cursor:pointer;font-weight:600}
+.sbtn[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.vac{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.acts{display:flex;flex-direction:column;gap:6px}
+@media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+/* ========== 1. MOCK DATA (Phase 1) ========== */
+const DATA = {
+  classes:[{id:"c1",name:"TY-CS-A",dept:"CS",year:3,division:"A"}],
+  subjects:[
+    {id:"s1",name:"Database Systems",short:"DBMS"},
+    {id:"s2",name:"Operating Systems",short:"OS"},
+    {id:"s3",name:"Computer Networks",short:"CN"},
+    {id:"s4",name:"Software Engineering",short:"SE"}],
+  // demo passwords only; real auth arrives in Tier B
+  users:[
+    {id:"u1",name:"Aarav Mehta",role:"student",login:"TY01",pw:"demo123",dept:"CS",classId:"c1",status:"approved",behaviour:4},
+    {id:"u2",name:"Diya Nair",role:"student",login:"TY02",pw:"demo123",dept:"CS",classId:"c1",status:"approved",behaviour:2},
+    {id:"u3",name:"Kabir Shah",role:"student",login:"TY03",pw:"demo123",dept:"CS",classId:"c1",status:"approved",behaviour:0},
+    {id:"u4",name:"Isha Rao",role:"student",login:"TY04",pw:"demo123",dept:"CS",classId:"c1",status:"pending",behaviour:0},
+    {id:"t1",name:"Prof. Sunita Kulkarni",role:"teacher",login:"sunita@edusync.demo",pw:"demo123",dept:"CS",status:"approved"},
+    {id:"t2",name:"Prof. Rahul Desai",role:"teacher",login:"rahul@edusync.demo",pw:"demo123",dept:"CS",status:"approved"},
+    {id:"a1",name:"Admin Office",role:"admin",login:"admin@edusync.demo",pw:"demo123",status:"approved"}],
+  timetable:[
+    {id:"tt1",classId:"c1",subjectId:"s1",teacherId:"t1",day:"Mon",start:"09:00",end:"10:00",room:"204"},
+    {id:"tt2",classId:"c1",subjectId:"s2",teacherId:"t2",day:"Mon",start:"10:30",end:"11:30",room:"204"},
+    {id:"tt3",classId:"c1",subjectId:"s3",teacherId:"t2",day:"Tue",start:"09:00",end:"10:00",room:"Lab 2"},
+    {id:"tt4",classId:"c1",subjectId:"s4",teacherId:"t1",day:"Wed",start:"11:00",end:"12:00",room:"204"},
+    {id:"tt5",classId:"c1",subjectId:"s1",teacherId:"t1",day:"Thu",start:"09:00",end:"10:00",room:"204"},
+    {id:"tt6",classId:"c1",subjectId:"s2",teacherId:"t2",day:"Fri",start:"10:30",end:"11:30",room:"204"}],
+  syllabus:{s1:{Unit1:["ER model","Relational model"],Unit2:["SQL basics","Normalization"]},
+            s2:{Unit1:["Processes","Threads"],Unit2:["Scheduling","Deadlocks"]}},
+  posts:[
+    {id:"p1",authorId:"t1",type:"event",body:"Database quiz night on Friday 31 Oct, 5 pm in Room 204. Teams of three. Bring your own pen.",when:"27 Oct",likes:["u1"]},
+    {id:"p2",authorId:"u2",type:"achievement",body:"Our team placed second at the state-level hackathon. Thank you to everyone who helped us debug at 2 am.",when:"25 Oct",likes:["u1","u3"]},
+    {id:"p3",authorId:"u1",type:"event",body:"Coding Club meet-up on Monday after lectures. We will solve three contest problems together.",when:"24 Oct",likes:[]}],
+  clubs:[
+    {id:"cl1",name:"Coding Club",leadId:"u1",about:"Weekly contest practice and project nights for anyone who likes building things.",vacancies:[{id:"v1",title:"Event coordinator",detail:"Plan the monthly contest and book rooms. About 2 hours a week.",volunteers:["u3"]}]},
+    {id:"cl2",name:"Literary Club",leadId:"t1",about:"Debates, poetry readings and the college magazine.",vacancies:[{id:"v2",title:"Magazine editor",detail:"Collect and proofread student articles.",volunteers:[]}]},
+    {id:"cl3",name:"Photography Club",leadId:"u2",about:"Photo walks and coverage of campus events.",vacancies:[]}]
+};
+Object.assign(DATA,{
+  history:{u1:{s1:{held:20,attended:14},s2:{held:18,attended:17},s3:{held:16,attended:12},s4:{held:10,attended:9}},
+           u2:{s1:{held:20,attended:18},s2:{held:18,attended:16},s3:{held:16,attended:15},s4:{held:10,attended:10}},
+           u3:{s1:{held:20,attended:12},s2:{held:18,attended:11},s3:{held:16,attended:9},s4:{held:10,attended:6}}},
+  session:null,
+  assignments:[
+    {id:"a1",kind:"assignment",subjectId:"s1",teacherId:"t1",title:"ER diagram for a library",due:"2026-11-05",desc:"Draw the ER diagram and list the keys."},
+    {id:"a2",kind:"note",subjectId:"s2",teacherId:"t2",title:"Scheduling algorithms summary",due:"",desc:"Notes for Unit 2."},
+    {id:"a3",kind:"pyq",subjectId:"s1",teacherId:"t1",title:"DBMS 2025 paper",due:"",desc:"Previous year questions."}],
+  submissions:[{aid:"a1",uid:"u2",text:"ER diagram link",at:"2026-10-27",late:false}]
+});
+const byId=(list,id)=>list.find(x=>x.id===id);
+const subj=id=>byId(DATA.subjects,id);
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+/* ========== 2. SERVICES ========== */
+const authService={
+  // Returns {user} or {error} with a friendly message
+  login(role,login,pw){
+    if(!login.trim()||!pw) return {error:"Enter both your ID and password."};
+    const u=DATA.users.find(x=>x.role===role&&x.login.toLowerCase()===login.trim().toLowerCase());
+    if(!u||u.pw!==pw) return {error:"That ID and password don’t match for this role. Check the demo logins below."};
+    if(u.status==="pending") return {error:"Your account is waiting for admin approval. Try again once it is approved."};
+    return {user:u};
+  }
+};
+
+/* ========== 3. NAV CONFIG ========== */
+const ico=p=>`<svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+const I={
+  home:ico('<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'),
+  check:ico('<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'),
+  doc:ico('<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>'),
+  spark:ico('<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>'),
+  chat:ico('<path d="M4 5h16v11H9l-5 4z"/>'),
+  users:ico('<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 3-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.8 3 6"/>'),
+  coin:ico('<circle cx="12" cy="12" r="9"/><path d="M14.5 9c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6v1.5M12 16.5V18"/>'),
+  mega:ico('<path d="M3 10v4h3l8 4V6L6 10z"/><path d="M18 9c1.3 1 1.3 5 0 6"/>'),
+  flag:ico('<path d="M5 21V4h12l-2 4 2 4H5"/>'),
+  star:ico('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>')
+};
+const NAV={
+  student:[["home","Home",I.home,0],["att","Attendance",I.check,2],["work","Tasks",I.doc,4],["tutor","Tutor",I.spark,5],["campus","Campus",I.star,8],["chat","Chat",I.chat,6]],
+  teacher:[["home","Home",I.home,0],["classes","Classes",I.users,3],["att","Attendance",I.check,3],["work","Tasks",I.doc,4],["campus","Campus",I.star,8],["chat","Chat",I.chat,6]],
+  admin:[["home","Home",I.home,0],["appr","Approvals",I.check,7],["fees","Fees",I.coin,7],["bcast","Broadcast",I.mega,7],["mod","Reports",I.flag,7],["campus","Campus",I.star,8]]
+};
+
+/* ========== 4. STATE ========== */
+const state={user:null,role:"student",tab:"home",error:"",campusTab:"feed",feedFilter:"all",msg:"",draft:"",draftType:"general"};
+
+/* ========== 5. SCREENS ========== */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function placeholder(label,phase){
+  return `<div class="card"><h3>${esc(label)}</h3><p class="muted">This screen is built in Phase ${phase}. The navigation and login already work.</p></div>`;
+}
+function ttRow(t,who){
+  const s=subj(t.subjectId);
+  const extra=who==="student"?byId(DATA.users,t.teacherId).name:byId(DATA.classes,t.classId).name;
+  return `<div class="row"><div><b>${esc(s.short)}</b> <span class="muted">${esc(extra)}</span></div><div>${t.day} ${t.start}–${t.end} · Room ${esc(t.room)}</div></div>`;
+}
+function studentHome(u){
+  const cls=byId(DATA.classes,u.classId);
+  const tt=DATA.timetable.filter(t=>t.classId===u.classId);
+  return `<h2>Hi, ${esc(u.name.split(" ")[0])}</h2><p class="muted">${esc(cls.name)} · Behaviour score ${u.behaviour>=0?"+":""}${u.behaviour}</p>
+  <div class="stats"><div class="stat"><b>${DATA.subjects.length}</b><span>Subjects</span></div><div class="stat"><b>${tt.length}</b><span>Lectures a week</span></div></div>
+  <div class="card"><h3>Your timetable</h3>${tt.map(t=>ttRow(t,"student")).join("")}</div>`;
+}
+function teacherHome(u){
+  const tt=DATA.timetable.filter(t=>t.teacherId===u.id);
+  const n=DATA.users.filter(x=>x.role==="student"&&x.status==="approved").length;
+  return `<h2>${esc(u.name)}</h2><p class="muted">${esc(u.dept)} department</p>
+  <div class="stats"><div class="stat"><b>${tt.length}</b><span>Lectures a week</span></div><div class="stat"><b>${n}</b><span>Students in TY-CS-A</span></div></div>
+  <div class="card"><h3>Who teaches what</h3>${tt.map(t=>ttRow(t,"teacher")).join("")}</div>`;
+}
+function adminHome(u){
+  const pend=DATA.users.filter(x=>x.status==="pending");
+  const c=r=>DATA.users.filter(x=>x.role===r).length;
+  return `<h2>Admin overview</h2><p class="muted">${esc(u.name)}</p>
+  <div class="stats"><div class="stat"><b>${c("student")}</b><span>Students</span></div><div class="stat"><b>${c("teacher")}</b><span>Teachers</span></div><div class="stat"><b>${pend.length}</b><span>Waiting for approval</span></div></div>
+  <div class="card"><h3>Pending accounts</h3>${pend.length?pend.map(p=>`<div class="row"><span>${esc(p.name)}</span><span class="muted">${p.role}</span></div>`).join(""):'<p class="muted">Nothing waiting.</p>'}</div>`;
+}
+/* ===== CAMPUS: feed + clubs ===== */
+const BAD=/\b(idiot|stupid|hate you|shut up|damn)\b/i; // simulated word filter; real moderation is Phase 6
+const TYPES={event:"Event",achievement:"Achievement",general:"Update"};
+const uname=id=>(byId(DATA.users,id)||{name:"Unknown"}).name;
+const today=()=>new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+function feedHtml(u){
+  const f=state.feedFilter, posts=DATA.posts.filter(p=>f==="all"||p.type===f);
+  const chips=[["all","All"],["event","Events"],["achievement","Achievements"]].map(([k,v])=>`<button class="chip" data-filter="${k}" aria-pressed="${f===k}">${v}</button>`).join("");
+  return `<div class="card"><h3>Share with campus</h3>
+  <label for="pt">What are you sharing?</label>
+  <select id="pt">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${state.draftType===k?"selected":""}>${v}</option>`).join("")}</select>
+  <label for="pb">Your post</label>
+  <textarea id="pb" rows="3" maxlength="400" placeholder="Hackathon this Saturday, or our team won the inter-college quiz">${esc(state.draft)}</textarea>
+  <button class="btn" id="post">Post</button>
+  <p class="muted small"><span class="sim">Simulated: basic word filter only</span></p></div>
+  <div class="chips">${chips}</div>
+  ${posts.length?posts.map(p=>{const liked=p.likes.includes(u.id);return `<div class="card"><div class="meta"><span><b>${esc(uname(p.authorId))}</b> <span class="muted small">${esc(byId(DATA.users,p.authorId).role)}</span></span><span class="muted small">${esc(p.when)}</span></div><span class="tag ${p.type==="achievement"?"ach":""}">${TYPES[p.type]}</span><p>${esc(p.body)}</p><button class="sbtn" data-like="${p.id}" aria-pressed="${liked}">${liked?"Liked":"Like"} ${p.likes.length}</button></div>`}).join(""):'<p class="muted">No posts here yet. Be the first to share one.</p>'}`;
+}
+function clubsHtml(u){
+  const form=`<div class="card"><h3>Start a club</h3><label for="cn">Club name</label><input id="cn"><label for="cd">What is it about?</label><textarea id="cd" rows="2" maxlength="200"></textarea><button class="btn" id="newclub">Create club</button></div>`;
+  return form+DATA.clubs.map(c=>{
+    const manage=c.leadId===u.id||u.role==="admin";
+    const vacs=c.vacancies.length?c.vacancies.map(v=>{const joined=v.volunteers.includes(u.id);
+      return `<div class="vac"><div><b>${esc(v.title)}</b><div class="muted small">${esc(v.detail)}</div><div class="small">${v.volunteers.length} volunteer${v.volunteers.length===1?"":"s"}${manage&&v.volunteers.length?": "+esc(v.volunteers.map(uname).join(", ")):""}</div></div><div class="acts"><button class="sbtn" data-vol="${c.id}|${v.id}" aria-pressed="${joined}">${joined?"Withdraw":"Volunteer"}</button>${manage?`<button class="sbtn" data-close="${c.id}|${v.id}">Close</button>`:""}</div></div>`}).join(""):'<p class="muted">No open vacancies right now.</p>';
+    const add=manage?`<label for="vt-${c.id}">New vacancy</label><input id="vt-${c.id}" placeholder="Poster designer"><input id="vd-${c.id}" placeholder="What will they do?" style="margin-top:6px"><button class="sbtn" data-addvac="${c.id}" style="margin-top:8px">Post vacancy</button>`:"";
+    return `<div class="card"><h3>${esc(c.name)}</h3><p>${esc(c.about)}</p><p class="muted small">Lead: ${esc(uname(c.leadId))}</p>${vacs}${add}</div>`}).join("");
+}
+function campusView(u){
+  const t=state.campusTab;
+  return `<h2>Campus</h2><div class="tabs two" role="group" aria-label="Campus sections"><button data-ctab="feed" aria-pressed="${t==="feed"}">Feed</button><button data-ctab="clubs" aria-pressed="${t==="clubs"}">Clubs</button></div><div class="err" role="alert">${esc(state.msg)}</div>${t==="feed"?feedHtml(u):clubsHtml(u)}`;
+}
+function bindCampus(root){
+  const u=state.user, q=(s,fn)=>root.querySelectorAll(s).forEach(b=>b.onclick=()=>fn(b));
+  const val=id=>(root.querySelector("#"+id)||{value:""}).value.trim();
+  const fail=m=>{state.msg=m;render();};
+  const club=id=>byId(DATA.clubs,id);
+  q("[data-ctab]",b=>{state.campusTab=b.dataset.ctab;state.msg="";render();});
+  q("[data-filter]",b=>{state.feedFilter=b.dataset.filter;render();});
+  q("[data-like]",b=>{const p=byId(DATA.posts,b.dataset.like),i=p.likes.indexOf(u.id);i<0?p.likes.push(u.id):p.likes.splice(i,1);render();});
+  q("#post",()=>{
+    const body=val("pb"),type=val("pt");state.draft=body;state.draftType=type;
+    if(body.length<5) return fail("Write at least a few words before posting.");
+    if(BAD.test(body)) return fail("This post may break campus rules. Reword it and try again.");
+    DATA.posts.unshift({id:"p"+Date.now(),authorId:u.id,type,body,when:today(),likes:[]});
+    state.draft="";state.draftType="general";state.msg="";state.feedFilter="all";render();
+  });
+  q("[data-vol]",b=>{const [c,v]=b.dataset.vol.split("|"),vac=club(c).vacancies.find(x=>x.id===v),i=vac.volunteers.indexOf(u.id);i<0?vac.volunteers.push(u.id):vac.volunteers.splice(i,1);render();});
+  q("[data-close]",b=>{const [c,v]=b.dataset.close.split("|"),cl=club(c);cl.vacancies=cl.vacancies.filter(x=>x.id!==v);render();});
+  q("[data-addvac]",b=>{const id=b.dataset.addvac,title=val("vt-"+id),detail=val("vd-"+id);
+    if(title.length<3||detail.length<5) return fail("Add a role title and a short description of the work.");
+    club(id).vacancies.push({id:"v"+Date.now(),title,detail,volunteers:[]});state.msg="";render();});
+  q("#newclub",()=>{const name=val("cn"),about=val("cd");
+    if(name.length<3||about.length<10) return fail("Give the club a name and a one-line description.");
+    DATA.clubs.unshift({id:"cl"+Date.now(),name,leadId:u.id,about,vacancies:[]});state.msg="";render();});
+}
+/* ===== ACADEMIC: attendance (Ph2-3) + tasks (Ph4) ===== */
+let AM={t:"",m:""}; // one-line status message: t is "ok" or "err"
+const amHtml=()=>AM.m?`<div class="${AM.t==="ok"?"okm":"err"}" role="alert">${esc(AM.m)}</div>`:"";
+const KIND={assignment:"Assignment",note:"Note",pyq:"Previous year paper"};
+const iso=()=>new Date().toISOString().slice(0,10);
+// Need n more lectures in a row so (a+n)/(h+n) >= t  =>  n >= (t*h-a)/(1-t). At 75% that is 3h-4a.
+// Example: held 20, attended 14 -> n = 4. Bunk budget: missed m lectures allowed => a/(h+m) >= t.
+function calcAttendance(held,attended,target=0.75){
+  const E=1e-9, pct=held?attended/held*100:100;
+  const needed=Math.max(0,Math.ceil((target*held-attended)/(1-target)-E));
+  const bunk=held&&attended/held>=target?Math.floor(attended/target-held+E):0;
+  return {pct,needed,bunk};
+}
+console.assert(calcAttendance(20,14).needed===4&&calcAttendance(20,18).bunk===4,"calcAttendance self-test failed");
+const WIN=20000; // QR code rotates every 20 s (simulated signing; real signing needs the Tier B server)
+const tok=(sid,w)=>{let h=2166136261;for(const ch of sid+":"+w){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(36).toUpperCase().padStart(6,"0").slice(-6);};
+const attService={
+  start(ttId){DATA.session={id:"S"+Date.now(),ttId,scanned:[]};},
+  mark(u,code,inside){
+    const s=DATA.session;
+    if(!s) return {error:"No lecture is taking attendance right now."};
+    const tt=byId(DATA.timetable,s.ttId);
+    if(tt.classId!==u.classId) return {error:"You are not enrolled in this class."};
+    if(s.scanned.includes(u.id)) return {error:"Already marked present for this lecture."};
+    if(!inside) return {error:"You seem to be outside the classroom. Move closer and try again."};
+    const w=Math.floor(Date.now()/WIN);
+    if(![w,w-1].some(x=>tok(s.id,x)===code.trim().toUpperCase())) return {error:"That code is wrong or expired. Read the new code under the QR."};
+    s.scanned.push(u.id);return {ok:"Marked present for "+subj(tt.subjectId).short+"."};
+  },
+  close(){
+    const s=DATA.session,tt=byId(DATA.timetable,s.ttId);
+    DATA.users.filter(x=>x.role==="student"&&x.status==="approved"&&x.classId===tt.classId).forEach(st=>{
+      const h=DATA.history[st.id][tt.subjectId];h.held++;if(s.scanned.includes(st.id))h.attended++;});
+    DATA.session=null;
+  }
+};
+function toast(m){const d=document.createElement("div");d.setAttribute("role","status");d.style.cssText="position:fixed;top:70px;left:12px;right:12px;max-width:600px;margin:auto;background:var(--brand);color:var(--brand-ink);padding:12px 14px;border-radius:12px;z-index:9";d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),6000);}
+function alertText(t){const c=byId(DATA.classes,t.classId),n=DATA.users.filter(x=>x.classId===t.classId&&x.status==="approved").length;return `In 10 minutes: ${c.name}, Dept ${c.dept}, ${n} students, Room ${t.room} at ${t.start}`;}
+const ALERTED=new Set();
+setInterval(()=>{const u=state.user;if(!u||u.role!=="teacher")return;const d=new Date(),day=DAYS[d.getDay()],now=d.getHours()*60+d.getMinutes();
+  DATA.timetable.filter(t=>t.teacherId===u.id&&t.day===day).forEach(t=>{const [h,m]=t.start.split(":"),k=t.id+d.toDateString();
+    if(+h*60+ +m-now===10&&!ALERTED.has(k)){ALERTED.add(k);toast(alertText(t));}});},30000);
+function qrSvg(text){try{const q=qrcode(0,"M");q.addData(text);q.make();return q.createSvgTag({cellSize:5,margin:2});}catch(e){return "";}}
+function qrBlock(){const s=DATA.session,w=Math.floor(Date.now()/WIN),code=tok(s.id,w),left=Math.ceil(((w+1)*WIN-Date.now())/1000);
+  return `<div style="background:#fff;display:inline-block;padding:8px;border-radius:10px;max-width:100%">${qrSvg(s.id+"|"+code)}</div><div style="font-family:var(--font-head);font-size:2rem;letter-spacing:.2em">${code}</div><p class="muted small">New code in ${left}s</p>`;}
+let tmr;
+function startTimer(){clearInterval(tmr);tmr=setInterval(()=>{const b=document.getElementById("qrbox");if(!b||!DATA.session){clearInterval(tmr);return;}
+  b.innerHTML=qrBlock();document.getElementById("cnt").textContent=DATA.session.scanned.length;document.getElementById("who").textContent=DATA.session.scanned.map(uname).join(", ")||"Nobody yet";},1000);}
+function attView(u){
+  if(u.role==="teacher") return teacherAtt(u);
+  const rows=DATA.subjects.map(s=>{const h=DATA.history[u.id][s.id],c=calcAttendance(h.held,h.attended);
+    const msg=c.needed?`Attend the next ${c.needed} lecture${c.needed>1?"s":""} in a row to reach 75%.`:(c.bunk?`You can miss ${c.bunk} more and stay at 75%.`:"You are exactly at 75%. Don’t miss the next one.");
+    return `<div class="card"><div class="meta"><b>${esc(s.name)}</b><b style="color:${c.pct>=75?"var(--ok)":"var(--bad)"}">${c.pct.toFixed(0)}%</b></div><div class="bar"><i style="width:${Math.min(100,c.pct)}%"></i></div><p class="muted small">${h.attended} of ${h.held} lectures. ${msg}</p></div>`}).join("");
+  return `<h2>Attendance</h2><div class="card"><h3>Mark attendance</h3><p class="muted small">${DATA.session?"A lecture is open. Enter the code shown under the teacher’s QR.":"No lecture is open right now."}</p>
+  <label for="ac">Code under the QR</label><input id="ac" maxlength="6" autocomplete="off">
+  <label><input type="checkbox" id="inside" checked style="width:auto;min-height:0"> I am inside the classroom</label>
+  <button class="btn" id="mark">Mark present</button>${amHtml()}<p><span class="sim">Simulated camera and location: type the code, untick the box to test the geofence</span></p></div>${rows}`;
+}
+function teacherAtt(u){
+  const s=DATA.session,mine=DATA.timetable.filter(t=>t.teacherId===u.id);
+  if(!s) return `<h2>Attendance</h2><div class="card"><h3>Start a lecture</h3><label for="slot">Lecture</label><select id="slot">${mine.map(t=>`<option value="${t.id}">${esc(subj(t.subjectId).short)} ${t.day} ${t.start}</option>`).join("")}</select><button class="btn" id="start">Start attendance</button>${amHtml()}</div><div class="card"><h3>Pre-lecture alert</h3><p class="muted small">You get this 10 minutes before each lecture.</p><button class="sbtn" data-prev="1">Preview the alert</button></div>`;
+  const tt=byId(DATA.timetable,s.ttId),total=DATA.users.filter(x=>x.classId===tt.classId&&x.status==="approved").length;
+  return `<h2>Attendance</h2><div class="card" style="text-align:center"><h3>${esc(subj(tt.subjectId).short)} is open</h3><div id="qrbox">${qrBlock()}</div></div>
+  <div class="card"><h3>Present: <span id="cnt">${s.scanned.length}</span> of ${total}</h3><p id="who" class="muted small">${esc(s.scanned.map(uname).join(", ")||"Nobody yet")}</p>
+  <button class="sbtn" data-sim="1">Simulate a student scan</button> <button class="btn" id="close">Close and save</button></div>`;
+}
+function workView(u){
+  if(u.role!=="student") return teacherWork(u);
+  const items=DATA.assignments.map(a=>{
+    const sub=DATA.submissions.find(s=>s.aid===a.id&&s.uid===u.id);
+    const head=`<div class="meta"><b>${esc(a.title)}</b><span class="tag">${KIND[a.kind]}</span></div><p class="muted small">${esc(subj(a.subjectId).short)}. ${esc(a.desc)}${a.due?" Due "+a.due+".":""}</p>`;
+    if(a.kind!=="assignment") return `<div class="card">${head}</div>`;
+    return `<div class="card">${head}${sub?`<p class="okm">Submitted ${sub.at}${sub.late?" (late)":""}</p>`:`<input id="sub-${a.id}" placeholder="Type your answer or paste a link" aria-label="Your answer"><button class="sbtn" data-sub="${a.id}" style="margin-top:8px">Submit</button>`}</div>`}).join("");
+  return `<h2>Tasks</h2>${amHtml()}<p><span class="sim">Simulated: no file upload, type text or a link</span></p>${items}`;
+}
+function teacherWork(u){
+  const mySubs=[...new Set(DATA.timetable.filter(t=>t.teacherId===u.id).map(t=>t.subjectId))];
+  const studs=DATA.users.filter(x=>x.role==="student"&&x.status==="approved");
+  const form=`<div class="card"><h3>Post to students</h3><label for="wk">Type</label><select id="wk">${Object.entries(KIND).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select><label for="ws">Subject</label><select id="ws">${mySubs.map(s=>`<option value="${s}">${esc(subj(s).name)}</option>`).join("")}</select><label for="wt">Title</label><input id="wt"><label for="wdue">Due date (assignments only)</label><input id="wdue" type="date"><label for="wde">Details</label><input id="wde"><button class="btn" id="wpost">Post</button>${amHtml()}</div>`;
+  const list=DATA.assignments.filter(a=>a.teacherId===u.id).map(a=>{
+    if(a.kind!=="assignment") return `<div class="card"><div class="meta"><b>${esc(a.title)}</b><span class="tag">${KIND[a.kind]}</span></div></div>`;
+    const done=studs.filter(s=>DATA.submissions.some(x=>x.aid===a.id&&x.uid===s.id)),pend=studs.filter(s=>!done.includes(s));
+    return `<div class="card"><div class="meta"><b>${esc(a.title)}</b><span class="tag">Due ${esc(a.due)}</span></div><p class="small"><b>Submitted (${done.length}):</b> ${esc(done.map(s=>s.name).join(", ")||"none")}</p><p class="small"><b>Pending (${pend.length}):</b> ${esc(pend.map(s=>s.name).join(", ")||"none")}</p>${pend.length?`<button class="sbtn" data-rem="${a.id}">Remind pending</button>`:""}</div>`}).join("");
+  return `<h2>Tasks</h2>${form}${list}`;
+}
+function bindAcademic(root){
+  const u=state.user,q=(s,fn)=>root.querySelectorAll(s).forEach(b=>b.onclick=()=>fn(b));
+  const val=id=>(root.querySelector("#"+id)||{value:""}).value.trim();
+  const say=(t,m)=>{AM={t,m};render();};
+  q("#mark",()=>{const r=attService.mark(u,val("ac"),root.querySelector("#inside").checked);say(r.error?"err":"ok",r.error||r.ok);});
+  q("#start",()=>{attService.start(val("slot"));AM.m="";render();});
+  q("#close",()=>{attService.close();say("ok","Saved. Student percentages are updated.");});
+  q("[data-sim]",()=>{const s=DATA.session,tt=byId(DATA.timetable,s.ttId),n=DATA.users.find(x=>x.role==="student"&&x.status==="approved"&&x.classId===tt.classId&&!s.scanned.includes(x.id));if(n)s.scanned.push(n.id);render();});
+  q("[data-prev]",()=>toast(alertText(DATA.timetable.find(t=>t.teacherId===u.id))));
+  q("[data-sub]",b=>{const id=b.dataset.sub,text=val("sub-"+id),a=byId(DATA.assignments,id);
+    if(text.length<3) return say("err","Write your answer or paste a link before submitting.");
+    DATA.submissions.push({aid:id,uid:u.id,text,at:iso(),late:!!a.due&&iso()>a.due});say("ok","Submitted.");});
+  q("#wpost",()=>{const kind=val("wk"),title=val("wt"),due=val("wdue");
+    if(title.length<3) return say("err","Give the post a title.");
+    if(kind==="assignment"&&!due) return say("err","Pick a due date for the assignment.");
+    DATA.assignments.unshift({id:"a"+Date.now(),kind,subjectId:val("ws"),teacherId:u.id,title,due:kind==="assignment"?due:"",desc:val("wde")||"No details."});say("ok","Posted.");});
+  q("[data-rem]",b=>{const n=DATA.users.filter(x=>x.role==="student"&&x.status==="approved"&&!DATA.submissions.some(s=>s.aid===b.dataset.rem&&s.uid===x.id)).length;toast("Reminder sent to "+n+" student(s) (simulated)");});
+  if(DATA.session&&u.role==="teacher"&&state.tab==="att") startTimer();
+}
+function screen(){
+  const u=state.user, item=NAV[u.role].find(n=>n[0]===state.tab)||NAV[u.role][0];
+  if(item[0]==="att") return attView(u);
+  if(item[0]==="work") return workView(u);
+  if(item[0]==="campus") return campusView(u);
+  if(item[0]==="home") return {student:studentHome,teacher:teacherHome,admin:adminHome}[u.role](u);
+  return placeholder(item[1],item[3]);
+}
+
+/* ========== 6. RENDER ========== */
+function loginView(){
+  const labels={student:"Roll number",teacher:"Email",admin:"Email"};
+  const hints={student:"TY01 / demo123",teacher:"sunita@edusync.demo / demo123",admin:"admin@edusync.demo / demo123"};
+  return `<div class="login"><h1>EduSync</h1><p class="muted">Attendance, assignments and learning in one place.</p>
+  <div class="tabs" role="group" aria-label="Sign in as">${["student","teacher","admin"].map(r=>`<button data-role="${r}" aria-pressed="${state.role===r}">${r[0].toUpperCase()+r.slice(1)}</button>`).join("")}</div>
+  <label for="lg">${labels[state.role]}</label><input id="lg" autocomplete="username">
+  <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+  <div class="err" id="err" role="alert">${esc(state.error)}</div>
+  <button class="btn" id="go">Sign in</button>
+  <div class="hint">Demo login: ${hints[state.role]}<br><span class="sim">Simulated sign-in, no real accounts</span></div></div>`;
+}
+function appView(){
+  const u=state.user;
+  return `<div class="app"><header class="top"><span class="logo">EduSync</span><span class="pill">${u.role}</span>
+  <button class="icon-btn" id="theme" aria-label="Switch light or dark theme">Theme</button><button class="icon-btn" id="out">Sign out</button></header>
+  <main>${screen()}</main>
+  <nav class="bottom" aria-label="Main"><div class="inner">${NAV[u.role].map(n=>`<button data-tab="${n[0]}" ${n[0]===state.tab?'aria-current="page"':""}>${n[2]}${n[1]}</button>`).join("")}</div></nav></div>`;
+}
+function render(){
+  const root=document.getElementById("root");
+  root.innerHTML=state.user?appView():loginView();
+  if(!state.user){
+    root.querySelectorAll("[data-role]").forEach(b=>b.onclick=()=>{state.role=b.dataset.role;state.error="";render();});
+    const go=()=>{
+      const r=authService.login(state.role,document.getElementById("lg").value,document.getElementById("pw").value);
+      if(r.error){state.error=r.error;document.getElementById("err").textContent=r.error;return;}
+      state.user=r.user;state.tab="home";state.error="";render();
+    };
+    document.getElementById("go").onclick=go;
+    root.querySelectorAll("input").forEach(i=>i.onkeydown=e=>{if(e.key==="Enter")go();});
+  }else{
+    root.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;state.msg="";AM.m="";render();window.scrollTo(0,0);});
+    document.getElementById("out").onclick=()=>{state.user=null;render();};
+    bindCampus(root);
+    bindAcademic(root);
+    document.getElementById("theme").onclick=()=>{
+      const h=document.documentElement;
+      const dark=h.dataset.theme?h.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+      h.dataset.theme=dark?"light":"dark";
+    };
+  }
+}
+render();
+</script>
+</body>
+</html>
