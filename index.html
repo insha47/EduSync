@@ -351,7 +351,7 @@ function bindAcademic(root){
   q("[data-prev]",()=>toast(alertText(DATA.timetable.find(t=>t.teacherId===u.id))));
   q("[data-sub]",b=>{const id=b.dataset.sub,text=val("sub-"+id),a=byId(DATA.assignments,id);
     if(text.length<3) return say("err","Write your answer or paste a link before submitting.");
-    DATA.submissions.push({aid:id,uid:u.id,text,at:iso(),late:!!a.due&&iso()>a.due});say("ok","Submitted.");});
+    DATA.submissions.push({aid:id,uid:u.id,text,at:iso(),late:!!a.due&&iso()>a.due});if(!(a.due&&iso()>a.due))addFlag(u.id,1,"On-time submission: "+a.title,"system");say("ok","Submitted.");});
   q("#wpost",()=>{const kind=val("wk"),title=val("wt"),due=val("wdue");
     if(title.length<3) return say("err","Give the post a title.");
     if(kind==="assignment"&&!due) return say("err","Pick a due date for the assignment.");
@@ -359,12 +359,166 @@ function bindAcademic(root){
   q("[data-rem]",b=>{const n=DATA.users.filter(x=>x.role==="student"&&x.status==="approved"&&!DATA.submissions.some(s=>s.aid===b.dataset.rem&&s.uid===x.id)).length;toast("Reminder sent to "+n+" student(s) (simulated)");});
   if(DATA.session&&u.role==="teacher"&&state.tab==="att") startTimer();
 }
+/* ===== PHASE 5: syllabus tracker + AI tutor ===== */
+Object.assign(DATA.syllabus,{s3:{Unit1:["OSI model","IP addressing"],Unit2:["TCP vs UDP","Routing"]},s4:{Unit1:["SDLC models","Requirements"],Unit2:["Testing","Agile and Scrum"]}});
+DATA.progress={u1:{},u2:{},u3:{}};
+const ST=["not started","learning","understood"];
+let TU={sid:"s1",unit:"",topic:"",out:"",quiz:null,busy:false,err:"",ans:{}};
+const TC={}; // cache: one tutor answer per topic and mode
+const tkey=(s,u,t)=>s+"|"+u+"|"+t;
+const topics=sid=>Object.entries(DATA.syllabus[sid]).flatMap(([unit,l])=>l.map(t=>({unit,t})));
+// aiTutorService: the only place that talks to an AI. Tier B swaps this for a backend that calls Groq.
+const aiTutorService={
+  prompt(sid){return `You are a friendly college tutor for ${subj(sid).name}. Syllabus: ${Object.entries(DATA.syllabus[sid]).map(([u,l])=>u+": "+l.join(", ")).join("; ")}. Teach only topics from this syllabus. If asked about anything else, politely decline and steer back to the syllabus. Keep it simple and short.`;},
+  async run(mode,sid,unit,topic,q){
+    const k=mode+tkey(sid,unit,topic)+(q||"");if(TC[k])return TC[k];
+    const sample=window.claude&&claude.use?await claude.use("sample"):null;
+    if(!sample)throw new Error("the AI tutor needs the Ask Claude permission, which is not available in this view.");
+    const sys=this.prompt(sid)+` Current topic: ${topic} (${unit}).`;
+    let r;
+    if(mode==="quiz"){r=await sample.json(sys+" Return only a JSON array of 3 multiple-choice questions. Each item has keys q, options (4 strings), answer (index 0 to 3) and why.",{cache:false});if(!Array.isArray(r)||!r.length)throw new Error("the quiz came back in the wrong shape. Try again.");}
+    else r=(await sample(sys+(mode==="ask"?` Student question: ${q}`:" Explain this topic in under 150 words, then give one real-life example."),{cache:false})).text;
+    return TC[k]=r;
+  }
+};
+async function runTutor(mode){
+  const q=mode==="ask"?(document.getElementById("tq").value.trim()):"";
+  if(mode==="ask"&&q.length<3){TU.err="Type a question first.";return render();}
+  TU.busy=true;TU.err="";if(mode==="quiz"){TU.quiz=null;TU.ans={};}else TU.out="";render();
+  try{const r=await aiTutorService.run(mode,TU.sid,TU.unit,TU.topic,q);if(mode==="quiz")TU.quiz=r;else TU.out=r;}
+  catch(e){TU.err="Tutor unavailable: "+(e.message||"try again.");}
+  TU.busy=false;render();
+}
+function tutorView(u){
+  const P=DATA.progress[u.id]=DATA.progress[u.id]||{},list=topics(TU.sid),k=x=>tkey(TU.sid,x.unit,x.t);
+  const done=list.filter(x=>P[k(x)]==="understood").length,pct=Math.round(done/list.length*100);
+  const rows=list.map(x=>`<div class="row"><div><b>${esc(x.t)}</b><div class="muted small">${esc(x.unit)}. ${P[k(x)]||ST[0]}</div></div><button class="sbtn" data-topic="${esc(x.unit)}|${esc(x.t)}" aria-pressed="${x.t===TU.topic}">Study</button></div>`).join("");
+  let panel="";
+  if(TU.topic){
+    const cur=P[tkey(TU.sid,TU.unit,TU.topic)]||ST[0];
+    const quiz=TU.quiz?TU.quiz.map((x,i)=>{const a=TU.ans[i];return `<div class="card"><p><b>${i+1}. ${esc(x.q)}</b></p>${x.options.map((o,j)=>`<button class="sbtn" style="display:block;width:100%;text-align:left;margin-top:6px;${a!==undefined&&j===x.answer?"border-color:var(--ok)":""}" data-qa="${i}|${j}" aria-pressed="${a===j}">${esc(o)}</button>`).join("")}${a!==undefined?`<p class="small ${a===x.answer?"okm":"err"}">${a===x.answer?"Correct. ":"Not quite. "}${esc(x.why||"")}</p>`:""}</div>`}).join(""):"";
+    const score=TU.quiz&&Object.keys(TU.ans).length===TU.quiz.length?`<p class="okm">Score: ${TU.quiz.filter((x,i)=>TU.ans[i]===x.answer).length} of ${TU.quiz.length}</p>`:"";
+    panel=`<div class="card"><h3>${esc(TU.topic)}</h3><p class="muted small">Status: ${cur}</p>
+    <button class="sbtn" data-tm="explain">Explain it</button> <button class="sbtn" data-tm="quiz">Quick quiz</button>
+    <p><button class="sbtn" data-st="learning">Learning</button> <button class="sbtn" data-st="understood">Mark understood</button></p>
+    ${TU.busy?'<p class="muted">Thinking…</p>':""}${TU.err?`<p class="err" role="alert">${esc(TU.err)}</p>`:""}${TU.out?`<p style="white-space:pre-wrap">${esc(TU.out)}</p>`:""}
+    <label for="tq">Ask about this topic</label><input id="tq" placeholder="Why does normalization matter?"><button class="sbtn" data-tm="ask" style="margin-top:8px">Ask</button></div>${quiz}${score}`;
+  }
+  return `<h2>AI tutor</h2><label for="tsub">Subject</label><select id="tsub">${DATA.subjects.map(s=>`<option value="${s.id}" ${s.id===TU.sid?"selected":""}>${esc(s.name)}</option>`).join("")}</select>
+  <div class="card" style="margin-top:12px"><div class="meta"><b>Syllabus progress</b><b>${pct}%</b></div><div class="bar"><i style="width:${pct}%"></i></div>${rows}</div>${panel}<p><span class="sim">AI answers come from Claude via the page. Tier B moves this behind a Groq backend</span></p>`;
+}
+/* ===== PHASE 7: admin ===== */
+Object.assign(DATA,{fees:{u1:{total:50000,paid:50000,due:"2026-09-30"},u2:{total:50000,paid:30000,due:"2026-09-30"},u3:{total:50000,paid:0,due:"2026-12-15"}},announcements:[{to:"all",text:"Welcome to EduSync. The semester fee deadline is 15 December.",when:"28 Oct"}]});
+const rupee=n=>"₹"+n.toLocaleString("en-IN");
+const feeStatus=f=>f.paid>=f.total?"Paid":(iso()>f.due?"Overdue":(f.paid?"Partial":"Due"));
+const annHtml=u=>{const a=DATA.announcements.filter(x=>x.to==="all"||x.to===u.role);return a.length?`<div class="card"><h3>Announcements</h3>${a.map(x=>`<div class="row"><span>${esc(x.text)}</span><span class="muted small">${esc(x.when)}</span></div>`).join("")}</div>`:"";};
+function apprView(){
+  const pend=DATA.users.filter(x=>x.status==="pending");
+  return `<h2>Approvals</h2>${amHtml()}${pend.length?pend.map(p=>`<div class="card"><div class="meta"><b>${esc(p.name)}</b><span class="tag">${p.role}</span></div><p class="muted small">${esc(p.login)}, ${esc(p.dept)}</p><button class="sbtn" data-ap="${p.id}">Approve</button> <button class="sbtn" data-rj="${p.id}">Reject</button></div>`).join(""):'<div class="card"><p class="muted">Nothing is waiting for approval.</p></div>'}<p class="muted small">Approval of uploads and posts is not wired up yet.</p>`;
+}
+function feesView(){
+  const rows=DATA.users.filter(x=>x.role==="student"&&x.status==="approved"&&DATA.fees[x.id]);
+  const tot=rows.reduce((a,x)=>a+DATA.fees[x.id].total,0),got=rows.reduce((a,x)=>a+DATA.fees[x.id].paid,0),late=rows.filter(x=>feeStatus(DATA.fees[x.id])==="Overdue").length;
+  return `<h2>Fees</h2><div class="stats"><div class="stat"><b>${rupee(got)}</b><span>Collected</span></div><div class="stat"><b>${rupee(tot-got)}</b><span>Outstanding</span></div><div class="stat"><b>${late}</b><span>Overdue</span></div></div>${amHtml()}
+  ${rows.map(x=>{const f=DATA.fees[x.id],s=feeStatus(f);return `<div class="card"><div class="meta"><b>${esc(x.name)}</b><span class="tag" style="${s==="Overdue"?"color:var(--bad)":""}">${s}</span></div><p class="muted small">${rupee(f.paid)} of ${rupee(f.total)}. Due ${f.due}</p>${f.paid<f.total?`<input id="pay-${x.id}" type="number" min="1" placeholder="Amount received" aria-label="Amount received"><button class="sbtn" data-pay="${x.id}" style="margin-top:8px">Record payment</button>`:""}</div>`}).join("")}`;
+}
+function bcastView(){
+  return `<h2>Broadcast</h2><div class="card"><label for="bt">Send to</label><select id="bt"><option value="all">Everyone</option><option value="student">Students</option><option value="teacher">Teachers</option></select><label for="bm">Message</label><textarea id="bm" rows="3" maxlength="300"></textarea><button class="btn" id="bsend">Send announcement</button>${amHtml()}</div>${annHtml({role:"admin"})}`;
+}
+function bindPhase57(root){
+  const u=state.user,q=(s,fn)=>root.querySelectorAll(s).forEach(b=>b.onclick=()=>fn(b));
+  const val=id=>(root.querySelector("#"+id)||{value:""}).value.trim();
+  const say=(t,m)=>{AM={t,m};render();};
+  const sel=root.querySelector("#tsub");if(sel)sel.onchange=()=>{TU={sid:sel.value,unit:"",topic:"",out:"",quiz:null,busy:false,err:"",ans:{}};render();};
+  q("[data-topic]",b=>{const [un,t]=b.dataset.topic.split("|");TU={...TU,unit:un,topic:t,out:"",quiz:null,err:"",ans:{}};render();});
+  q("[data-tm]",b=>runTutor(b.dataset.tm));
+  q("[data-st]",b=>{DATA.progress[u.id][tkey(TU.sid,TU.unit,TU.topic)]=b.dataset.st;render();});
+  q("[data-qa]",b=>{const [i,j]=b.dataset.qa.split("|");if(TU.ans[i]===undefined){TU.ans[i]=+j;render();}});
+  q("[data-ap]",b=>{const p=byId(DATA.users,b.dataset.ap);p.status="approved";
+    if(p.role==="student"){p.classId="c1";p.behaviour=0;DATA.history[p.id]={};DATA.subjects.forEach(s=>DATA.history[p.id][s.id]={held:0,attended:0});DATA.progress[p.id]={};DATA.fees[p.id]={total:50000,paid:0,due:"2026-12-15"};}
+    say("ok",p.name+" approved.");});
+  q("[data-rj]",b=>{const p=byId(DATA.users,b.dataset.rj);DATA.users=DATA.users.filter(x=>x!==p);say("ok",p.name+" rejected and removed.");});
+  q("[data-pay]",b=>{const id=b.dataset.pay,f=DATA.fees[id],n=+val("pay-"+id);
+    if(!(n>0)||n>f.total-f.paid)return say("err","Enter an amount between 1 and "+rupee(f.total-f.paid)+".");
+    f.paid+=n;say("ok","Recorded "+rupee(n)+" for "+uname(id)+".");});
+  q("#bsend",()=>{const m=val("bm");if(m.length<5)return say("err","Write a short message first.");
+    DATA.announcements.unshift({to:val("bt"),text:m,when:today()});say("ok","Announcement sent.");});
+}
+/* ===== PHASE 6: chat + safety ===== */
+Object.assign(DATA,{
+  channels:[{id:"class",name:"Class group",roles:["student","teacher"]},{id:"common",name:"Common room",roles:["student","teacher"]},{id:"tcom",name:"Teacher community",roles:["teacher"]}],
+  messages:[{id:"m1",ch:"class",uid:"t1",text:"Assignment 1 is due next Wednesday. Ask here if anything is unclear.",when:"27 Oct"},{id:"m2",ch:"common",uid:"u2",text:"Anyone up for a study group on Sunday?",when:"27 Oct"},{id:"m3",ch:"tcom",uid:"t2",text:"Can we swap the Friday OS slot?",when:"26 Oct"}],
+  flags:[]
+});
+let CH={ch:"class",busy:false};
+// A flag is +1 (green) or -1 (red). Always shows a reason and a source, and an admin can reverse it.
+function addFlag(uid,delta,reason,source){DATA.flags.unshift({id:"f"+Date.now()+Math.random().toString(36).slice(2,5),uid,delta,reason,source,when:today(),reversed:false});const p=byId(DATA.users,uid);if(p&&p.role==="student")p.behaviour=(p.behaviour||0)+delta;}
+const HARD=/\b(fuck\w*|shit|bitch|bastard|asshole)\b/i, SOFT=/\b(idiot|stupid|loser|shut up|hate you|dumb|kill|die)\b/i;
+// Moderation: free regex first, AI only for ambiguous wording. Runs on the sender’s device before sending.
+const moderationService={
+  async check(text){
+    if(HARD.test(text)) return {label:"profanity",by:"system"};
+    if(!SOFT.test(text)) return {label:"ok",by:"system"};
+    try{
+      const s=window.claude&&claude.use?await claude.use("sample"):null;
+      if(!s) return {label:"ok",by:"system"}; // no AI available: never punish on a guess
+      const r=await s.json(`Classify this campus chat message as exactly one of ok, profanity, off_topic or harassment. Joking or neutral uses of words like kill or die are ok. Return only JSON like {"label":"ok"}. Message: ${text}`,{modelTier:"quick"});
+      return {label:["ok","profanity","off_topic","harassment"].includes(r.label)?r.label:"ok",by:"ai"};
+    }catch(e){return {label:"ok",by:"system"};}
+  }
+};
+function chatView(u){
+  const chs=DATA.channels.filter(c=>c.roles.includes(u.role));if(!chs.some(c=>c.id===CH.ch))CH.ch=chs[0].id;
+  const msgs=DATA.messages.filter(m=>m.ch===CH.ch).slice(-30);
+  return `<h2>Chat</h2><div class="chips">${chs.map(c=>`<button class="chip" data-ch="${c.id}" aria-pressed="${c.id===CH.ch}">${esc(c.name)}</button>`).join("")}</div>
+  <p class="muted small">Online now: ${esc(u.name)} (simulated presence)</p>
+  <div class="card">${msgs.map(m=>`<div class="row"><div><b>${esc(uname(m.uid))}</b> <span class="muted small">${esc(m.when)}</span><div>${esc(m.text)}</div></div></div>`).join("")||'<p class="muted">No messages yet.</p>'}</div>
+  <div class="card"><label for="cm">Message</label><input id="cm" maxlength="300" autocomplete="off"><button class="btn" id="csend">${CH.busy?"Checking…":"Send"}</button>${amHtml()}<p class="muted small"><span class="sim">Checked on your device before sending</span></p></div>
+  <div class="card"><h3>Encryption demo</h3><p class="muted small">Encrypts text with AES-GCM in your browser, then decrypts it.</p><input id="ed" aria-label="Text to encrypt" placeholder="Type something secret"><button class="sbtn" id="enc" style="margin-top:8px">Encrypt and decrypt</button><div id="eo" class="small" style="white-space:pre-wrap;word-break:break-all;margin-top:8px"></div><span class="sim">Demo only. Real end-to-end chat needs the Tier B server</span></div>`;
+}
+function modView(){
+  const fl=DATA.flags;
+  return `<h2>Reports</h2>${amHtml()}<div class="stats"><div class="stat"><b>${fl.filter(f=>!f.reversed&&f.delta<0).length}</b><span>Active red flags</span></div><div class="stat"><b>${fl.filter(f=>!f.reversed&&f.delta>0).length}</b><span>Green flags</span></div></div>
+  ${fl.length?fl.map(f=>`<div class="card"><div class="meta"><b>${esc(uname(f.uid))}</b><span class="tag" style="color:var(--${f.delta<0?"bad":"ok"})">${f.delta>0?"+1":"-1"}${f.reversed?" reversed":""}</span></div><p class="small">${esc(f.reason)}</p><p class="muted small">Source: ${esc(f.source)}. ${esc(f.when)}</p>${f.reversed?"":`<button class="sbtn" data-rev="${f.id}">Reverse</button>`}</div>`).join(""):'<div class="card"><p class="muted">No flags yet. They appear when a chat message is blocked or a student submits on time.</p></div>'}`;
+}
+function classesView(u){
+  const mine=[...new Set(DATA.timetable.filter(t=>t.teacherId===u.id).map(t=>t.subjectId))];
+  const studs=DATA.users.filter(x=>x.role==="student"&&x.status==="approved"&&DATA.history[x.id]);
+  return `<h2>Classes</h2>${mine.map(s=>`<div class="card"><h3>${esc(subj(s).name)}</h3>${studs.map(x=>{const h=DATA.history[x.id][s],c=calcAttendance(h.held,h.attended);return `<div class="row"><span>${esc(x.name)}</span><b style="color:${c.pct>=75?"var(--ok)":"var(--bad)"}">${c.pct.toFixed(0)}%</b></div>`}).join("")}</div>`).join("")}`;
+}
+function bindPhase6(root){
+  const u=state.user,q=(s,fn)=>root.querySelectorAll(s).forEach(b=>b.onclick=()=>fn(b));
+  const val=id=>(root.querySelector("#"+id)||{value:""}).value.trim();
+  const say=(t,m)=>{AM={t,m};render();};
+  q("[data-ch]",b=>{CH.ch=b.dataset.ch;AM.m="";render();});
+  q("#csend",async()=>{
+    const t=val("cm");if(CH.busy)return;if(!t)return say("err","Type a message first.");
+    CH.busy=true;render();
+    const r=await moderationService.check(t);CH.busy=false;
+    if(r.label!=="ok"){addFlag(u.id,-1,"Message blocked: "+r.label,r.by);return say("err","Message not sent ("+r.label+"). A flag was logged and an admin can review it.");}
+    DATA.messages.push({id:"m"+Date.now(),ch:CH.ch,uid:u.id,text:t,when:today()});AM.m="";render();
+  });
+  q("#enc",async()=>{const t=val("ed"),o=root.querySelector("#eo");if(!t){o.textContent="Type some text first.";return;}
+    try{const k=await crypto.subtle.generateKey({name:"AES-GCM",length:256},false,["encrypt","decrypt"]),iv=crypto.getRandomValues(new Uint8Array(12));
+      const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},k,new TextEncoder().encode(t));
+      const back=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv},k,ct));
+      o.textContent="Ciphertext: "+btoa(String.fromCharCode(...new Uint8Array(ct)))+"\nDecrypted: "+back;
+    }catch(e){o.textContent="Encryption is not available in this browser.";}});
+  q("[data-rev]",b=>{const f=DATA.flags.find(x=>x.id===b.dataset.rev),p=byId(DATA.users,f.uid);f.reversed=true;if(p&&p.role==="student")p.behaviour-=f.delta;say("ok","Flag reversed.");});
+}
 function screen(){
   const u=state.user, item=NAV[u.role].find(n=>n[0]===state.tab)||NAV[u.role][0];
+  if(item[0]==="chat") return chatView(u);
+  if(item[0]==="mod") return modView();
+  if(item[0]==="classes") return classesView(u);
+  if(item[0]==="tutor") return tutorView(u);
+  if(item[0]==="appr") return apprView();
+  if(item[0]==="fees") return feesView();
+  if(item[0]==="bcast") return bcastView();
   if(item[0]==="att") return attView(u);
   if(item[0]==="work") return workView(u);
   if(item[0]==="campus") return campusView(u);
-  if(item[0]==="home") return {student:studentHome,teacher:teacherHome,admin:adminHome}[u.role](u);
+  if(item[0]==="home") return {student:studentHome,teacher:teacherHome,admin:adminHome}[u.role](u)+annHtml(u);
   return placeholder(item[1],item[3]);
 }
 
@@ -404,6 +558,8 @@ function render(){
     document.getElementById("out").onclick=()=>{state.user=null;render();};
     bindCampus(root);
     bindAcademic(root);
+    bindPhase57(root);
+    bindPhase6(root);
     document.getElementById("theme").onclick=()=>{
       const h=document.documentElement;
       const dark=h.dataset.theme?h.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
