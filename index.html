@@ -4,79 +4,132 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EduSync</title>
+<meta name="theme-color" content="#4338CA">
+<meta name="description" content="EduSync: attendance, assignments, AI tutor and safe chat for campuses.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600&display=swap">
 <style>
 :root{
-  --bg:#F5F6FB; --surface:#FFFFFF; --ink:#1B1F3B; --muted:#5B6080; --line:#DDE0EE;
-  --brand:#3A3FA8; --brand-ink:#FFFFFF; --ok:#12805C; --warn:#B45309; --bad:#B42318;
-  --tint:#E8E9F8; --font-head:"Bricolage Grotesque",system-ui,sans-serif; --font:"Figtree",system-ui,sans-serif;
+  --bg:#F5F6FA; --surface:#FFFFFF; --ink:#101828; --muted:#5B6479; --line:#E3E6EF;
+  --brand:#4338CA; --brand-ink:#FFFFFF; --ok:#0E7C5A; --warn:#B45309; --bad:#B42318; --tint:#EEF0FF;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 6px 18px rgba(16,24,40,.05);
+  --font-head:"Bricolage Grotesque",system-ui,sans-serif; --font:"Figtree",system-ui,sans-serif;
   color-scheme:light; box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#12142B; --surface:#1C1F3F; --ink:#ECEEFB; --muted:#A3A8CC; --line:#2F3363;
-    --brand:#8C91F2; --brand-ink:#12142B; --ok:#4CD1A0; --warn:#F2B35C; --bad:#FF8E84; --tint:#272B5A; color-scheme:dark;
+    --bg:#0B1020; --surface:#141A33; --ink:#EEF1FF; --muted:#A5ADC9; --line:#242C4F;
+    --brand:#9AA1FF; --brand-ink:#0B1020; --ok:#4CD1A0; --warn:#F2B35C; --bad:#FF8E84; --tint:#1E2548; --shadow:none; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#12142B; --surface:#1C1F3F; --ink:#ECEEFB; --muted:#A3A8CC; --line:#2F3363;
-  --brand:#8C91F2; --brand-ink:#12142B; --ok:#4CD1A0; --warn:#F2B35C; --bad:#FF8E84; --tint:#272B5A; color-scheme:dark;
+  --bg:#0B1020; --surface:#141A33; --ink:#EEF1FF; --muted:#A5ADC9; --line:#242C4F;
+  --brand:#9AA1FF; --brand-ink:#0B1020; --ok:#4CD1A0; --warn:#F2B35C; --bad:#FF8E84; --tint:#1E2548; --shadow:none; color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:inherit}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5}
-h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.15}
-button,input{font:inherit;color:inherit}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.15;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
-.app{max-width:720px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-header.top{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.logo{font-family:var(--font-head);font-weight:700;font-size:1.25rem;color:var(--brand);margin-right:auto}
-.pill{font-size:.8rem;padding:2px 10px;border-radius:99px;background:var(--tint);color:var(--brand);font-weight:600}
-.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:40px;padding:0 12px;cursor:pointer}
-main{flex:1;padding:16px 16px 90px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
-.card h3{font-size:1.05rem;margin-bottom:8px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
-.stat b{display:block;font-family:var(--font-head);font-size:1.7rem}
-.stat span{color:var(--muted);font-size:.9rem}
-.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+p{margin:.4em 0}
+.mark{width:30px;height:30px;color:var(--brand);flex:none}
+/* shell */
+.app{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr);max-width:1180px;margin:0 auto}
+.col{display:flex;flex-direction:column;min-width:0}
+header.top{display:flex;align-items:center;gap:10px;padding:10px 16px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--font-head);font-weight:700;font-size:1.2rem;color:var(--ink)}
+.sp{flex:1}
+.pill{font-size:.78rem;padding:3px 11px;border-radius:99px;background:var(--tint);color:var(--brand);font-weight:600;text-transform:capitalize}
+.icon-btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);background:var(--surface);border-radius:12px;cursor:pointer;padding:0}
+.icon-btn:hover{border-color:var(--brand)}
+.icon-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#7C6CF6);color:#fff;font-weight:700;font-size:.82rem;flex:none}
+main{flex:1;padding:18px 16px 96px;max-width:900px;width:100%}
+main>h2:first-child{font-size:1.65rem;margin-bottom:2px}
+.hero{background:linear-gradient(135deg,#3730A3,#5B4FE0 60%,#7C6CF6);color:#fff;border-radius:20px;padding:22px;margin-bottom:14px;box-shadow:var(--shadow)}
+.hero h2{color:#fff;font-size:1.6rem}.hero .muted{color:rgba(255,255,255,.86);margin:6px 0 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h3{font-size:1.05rem;margin-bottom:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:var(--font-head);font-size:1.85rem;color:var(--brand);line-height:1.1}
+.stat span{color:var(--muted);font-size:.88rem}
+.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
 .row:first-of-type{border-top:0}
-.muted{color:var(--muted)}
-.sim{font-size:.78rem;background:var(--tint);color:var(--muted);padding:2px 8px;border-radius:6px}
-nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.muted{color:var(--muted)}.small{font-size:.86rem}
+.sim{display:inline-block;font-size:.76rem;background:var(--tint);color:var(--muted);padding:2px 9px;border-radius:99px}
+/* nav: bottom bar on phones, sidebar on desktop */
+nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:6}
 nav.bottom .inner{display:flex;width:100%;max-width:720px}
-nav.bottom button{flex:1;border:0;background:none;padding:10px 2px;min-height:56px;cursor:pointer;color:var(--muted);font-size:.7rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.bottom button{flex:1;border:0;background:none;padding:9px 2px;min-height:58px;cursor:pointer;color:var(--muted);font-size:.7rem;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
 nav.bottom button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.bottom button[aria-current="page"]{color:var(--brand);font-weight:600}
-/* login */
-.login{max-width:420px;margin:0 auto;padding:32px 16px}
-.login h1{font-size:2.1rem;color:var(--brand);margin-bottom:4px}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:20px 0 14px}
-.tabs button{padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;min-height:44px;font-weight:600}
-.tabs button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
-label{display:block;font-weight:600;margin:12px 0 4px}
-input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);min-height:44px}
-.btn{width:100%;margin-top:16px;padding:12px;border:0;border-radius:10px;background:var(--brand);color:var(--brand-ink);font-weight:600;cursor:pointer;min-height:46px}
-.err{color:var(--bad);margin-top:10px;font-weight:500}
-.hint{font-size:.88rem;color:var(--muted);margin-top:14px;padding:10px 12px;background:var(--tint);border-radius:10px}
-textarea,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:inherit;color:inherit}
-textarea{resize:vertical}
-.bar{height:8px;border-radius:99px;background:var(--tint);overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--brand)}
-.okm{color:var(--ok);margin-top:10px;font-weight:500}
+nav.bottom button[aria-current="page"]::before{content:"";position:absolute;top:0;width:28px;height:3px;border-radius:0 0 4px 4px;background:var(--brand)}
+.side-brand,.side-user{display:none}
+@media (min-width:900px){
+  .app{grid-template-columns:250px minmax(0,1fr)}
+  nav.bottom{position:sticky;top:0;height:100vh;flex-direction:column;justify-content:flex-start;gap:18px;padding:22px 14px;border-top:0;border-right:1px solid var(--line);align-self:start}
+  nav.bottom .inner{flex-direction:column;gap:4px;max-width:none}
+  nav.bottom button{flex:none;flex-direction:row;gap:12px;justify-content:flex-start;padding:0 14px;min-height:44px;border-radius:12px;font-size:.95rem}
+  nav.bottom button:hover{background:var(--tint)}
+  nav.bottom button[aria-current="page"]{background:var(--tint)}
+  nav.bottom button[aria-current="page"]::before{display:none}
+  .side-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-head);font-weight:700;font-size:1.3rem;padding:0 6px}
+  .side-user{display:flex;align-items:center;gap:10px;margin-top:auto;padding:12px;border:1px solid var(--line);border-radius:14px}
+  header.top .logo{display:none}
+  main{padding:26px 32px 48px}
+}
+/* sign-in */
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr)}
+.auth-art{background:linear-gradient(150deg,#312E81,#4F46E5 55%,#7C6CF6);color:#fff;padding:28px 22px 30px;--mark-ink:#4338CA}
+.auth-art .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-head);font-weight:700;font-size:1.3rem}
+.auth-art .mark{color:#fff}
+.auth-art h1{font-size:1.7rem;margin:22px 0 8px;color:#fff}
+.auth-art p{color:rgba(255,255,255,.88);max-width:34ch}
+.auth-art ul{display:none;list-style:none;padding:0;margin:22px 0 0}
+.auth-art li{padding:8px 0 8px 28px;position:relative;color:rgba(255,255,255,.95)}
+.auth-art li::before{content:"";position:absolute;left:0;top:13px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.25);box-shadow:inset 0 0 0 4px rgba(255,255,255,.9)}
+.auth-form{display:grid;place-items:center;padding:24px 16px 40px}
+.login{width:100%;max-width:400px}
+.login h2{font-size:1.7rem}
+@media (min-width:900px){
+  .auth{grid-template-columns:1.05fr 1fr}
+  .auth-art{padding:56px 52px;display:flex;flex-direction:column;justify-content:center}
+  .auth-art h1{font-size:2.6rem}.auth-art ul{display:block}
+}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:20px 0 14px;padding:4px;background:var(--tint);border-radius:14px}
+.tabs button{padding:9px;border-radius:10px;border:0;background:transparent;cursor:pointer;min-height:42px;font-weight:600;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--brand);box-shadow:var(--shadow)}
 .tabs.two{grid-template-columns:repeat(2,1fr);margin:12px 0}
-.chips{display:flex;gap:6px;margin:4px 0 12px;flex-wrap:wrap}
-.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 14px;min-height:36px;cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--tint);color:var(--brand);border-color:var(--brand);font-weight:600}
+/* forms + buttons */
+label{display:block;font-weight:600;font-size:.92rem;margin:14px 0 5px}
+input,textarea,select{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--surface);min-height:46px}
+input:focus,textarea:focus,select:focus{border-color:var(--brand)}
+textarea{resize:vertical}
+.btn{width:100%;margin-top:16px;padding:12px;border:0;border-radius:12px;background:linear-gradient(135deg,var(--brand),#6B5CE7);color:var(--brand-ink);font-weight:600;cursor:pointer;min-height:48px;box-shadow:0 6px 16px rgba(67,56,202,.22)}
+.btn:hover{filter:brightness(1.06)}
+.sbtn{border:1px solid var(--line);background:var(--surface);color:var(--brand);border-radius:12px;min-height:42px;padding:0 15px;cursor:pointer;font-weight:600}
+.sbtn:hover{border-color:var(--brand);background:var(--tint)}
+.sbtn[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.err{color:var(--bad);margin-top:10px;font-weight:500}.okm{color:var(--ok);margin-top:10px;font-weight:500}
+.hint{font-size:.88rem;color:var(--muted);margin-top:16px;padding:12px 14px;background:var(--tint);border-radius:12px}
+.bar{height:9px;border-radius:99px;background:var(--tint);overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#7C6CF6);border-radius:99px}
+.chips{display:flex;gap:8px;margin:4px 0 14px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 15px;min-height:38px;cursor:pointer;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
-.tag{font-size:.78rem;padding:2px 8px;border-radius:6px;background:var(--tint);color:var(--brand);font-weight:600}
+.tag{font-size:.76rem;padding:3px 10px;border-radius:99px;background:var(--tint);color:var(--brand);font-weight:600}
 .tag.ach{color:var(--ok)}
-.small{font-size:.85rem}
-.sbtn{border:1px solid var(--brand);background:transparent;color:var(--brand);border-radius:10px;min-height:40px;padding:0 14px;cursor:pointer;font-weight:600}
-.sbtn[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
-.vac{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.vac{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .acts{display:flex;flex-direction:column;gap:6px}
-@media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
+code{background:var(--tint);padding:1px 6px;border-radius:6px}
+video{background:#000}
+@media (prefers-reduced-motion:no-preference){.card,.stat,.sbtn,.btn,.chip{transition:border-color .15s,background .15s,filter .15s}}
 </style>
 </head>
 <body>
@@ -183,21 +236,21 @@ function ttRow(t,who){
 function studentHome(u){
   const cls=byId(DATA.classes,u.classId);
   const tt=DATA.timetable.filter(t=>t.classId===u.classId);
-  return `<h2>Hi, ${esc(u.name.split(" ")[0])}</h2><p class="muted">${esc(cls.name)} · Behaviour score ${u.behaviour>=0?"+":""}${u.behaviour}</p>
+  return `<div class="hero"><h2>Hi, ${esc(u.name.split(" ")[0])}</h2><p class="muted">${esc(cls.name)} · Behaviour score ${u.behaviour>=0?"+":""}${u.behaviour}</p></div>
   <div class="stats"><div class="stat"><b>${DATA.subjects.length}</b><span>Subjects</span></div><div class="stat"><b>${tt.length}</b><span>Lectures a week</span></div></div>
   <div class="card"><h3>Your timetable</h3>${tt.map(t=>ttRow(t,"student")).join("")}</div>`;
 }
 function teacherHome(u){
   const tt=DATA.timetable.filter(t=>t.teacherId===u.id);
   const n=DATA.users.filter(x=>x.role==="student"&&x.status==="approved").length;
-  return `<h2>${esc(u.name)}</h2><p class="muted">${esc(u.dept)} department</p>
+  return `<div class="hero"><h2>${esc(u.name)}</h2><p class="muted">${esc(u.dept)} department</p></div>
   <div class="stats"><div class="stat"><b>${tt.length}</b><span>Lectures a week</span></div><div class="stat"><b>${n}</b><span>Students in TY-CS-A</span></div></div>
   <div class="card"><h3>Who teaches what</h3>${tt.map(t=>ttRow(t,"teacher")).join("")}</div>`;
 }
 function adminHome(u){
   const pend=DATA.users.filter(x=>x.status==="pending");
   const c=r=>DATA.users.filter(x=>x.role===r).length;
-  return `<h2>Admin overview</h2><p class="muted">${esc(u.name)}</p>
+  return `<div class="hero"><h2>Admin overview</h2><p class="muted">${esc(u.name)}</p></div>
   <div class="stats"><div class="stat"><b>${c("student")}</b><span>Students</span></div><div class="stat"><b>${c("teacher")}</b><span>Teachers</span></div><div class="stat"><b>${pend.length}</b><span>Waiting for approval</span></div></div>
   <div class="card"><h3>Pending accounts</h3>${pend.length?pend.map(p=>`<div class="row"><span>${esc(p.name)}</span><span class="muted">${p.role}</span></div>`).join(""):'<p class="muted">Nothing waiting.</p>'}</div>`;
 }
@@ -671,23 +724,31 @@ function screen(){
 }
 
 /* ========== 6. RENDER ========== */
+const MARK='<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M6 13l10-5 10 5-10 5z" style="fill:var(--mark-ink,#fff)"/><path d="M10 16.5v4.2c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.2l-6 3z" style="fill:var(--mark-ink,#fff);opacity:.8"/></svg>';
+const ICON_THEME='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>';
+const ICON_OUT='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg>';
+const ini=n=>n.replace(/^(Prof\.|Dr\.)\s*/,"").split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
 function loginView(){
   const labels={student:"Roll number",teacher:"Email",admin:"Email"};
   const hints={student:"TY01 / demo123",teacher:"sunita@edusync.demo / demo123",admin:"admin@edusync.demo / demo123"};
-  return `<div class="login"><h1>EduSync</h1><p class="muted">Attendance, assignments and learning in one place.</p>
+  return `<div class="auth"><aside class="auth-art"><div class="brand">${MARK}<span>EduSync</span></div><h1>One campus.<br>One smart platform.</h1><p>Attendance, assignments, an AI tutor and safe chat for students, teachers and admins.</p>
+  <ul><li>Rotating QR plus face or fingerprint check</li><li>Syllabus-grounded AI tutor</li><li>Encrypted, moderated chat</li></ul></aside>
+  <section class="auth-form"><div class="login"><h2>Welcome back</h2><p class="muted">Sign in to continue.</p>
   <div class="tabs" role="group" aria-label="Sign in as">${["student","teacher","admin"].map(r=>`<button data-role="${r}" aria-pressed="${state.role===r}">${r[0].toUpperCase()+r.slice(1)}</button>`).join("")}</div>
   <label for="lg">${labels[state.role]}</label><input id="lg" autocomplete="username">
   <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
   <div class="err" id="err" role="alert">${esc(state.error)}</div>
   <button class="btn" id="go">Sign in</button>
-  <div class="hint">Demo login: ${hints[state.role]}<br><span class="sim">Simulated sign-in, no real accounts</span></div></div>`;
+  <div class="hint">Demo login: ${hints[state.role]}<br><span class="sim">Simulated sign-in, no real accounts</span></div></div></section></div>`;
 }
 function appView(){
-  const u=state.user;
-  return `<div class="app"><header class="top"><span class="logo">EduSync</span><span class="pill">${u.role}</span>
-  <button class="icon-btn" id="theme" aria-label="Switch light or dark theme">Theme</button><button class="icon-btn" id="out">Sign out</button></header>
-  <main>${screen()}</main>
-  <nav class="bottom" aria-label="Main"><div class="inner">${NAV[u.role].map(n=>`<button data-tab="${n[0]}" ${n[0]===state.tab?'aria-current="page"':""}>${n[2]}${n[1]}</button>`).join("")}</div></nav></div>`;
+  const u=state.user,av=esc(ini(u.name));
+  return `<div class="app"><nav class="bottom" aria-label="Main"><div class="side-brand">${MARK}<span>EduSync</span></div>
+  <div class="inner">${NAV[u.role].map(n=>`<button data-tab="${n[0]}" ${n[0]===state.tab?'aria-current="page"':""}>${n[2]}${n[1]}</button>`).join("")}</div>
+  <div class="side-user"><span class="avatar" aria-hidden="true">${av}</span><div><b>${esc(u.name)}</b><div class="muted small">${u.role}</div></div></div></nav>
+  <div class="col"><header class="top"><span class="logo">${MARK}EduSync</span><span class="sp"></span><span class="pill">${u.role}</span>
+  <button class="icon-btn" id="theme" aria-label="Switch light or dark theme">${ICON_THEME}</button><button class="icon-btn" id="out" aria-label="Sign out">${ICON_OUT}</button><span class="avatar" aria-hidden="true">${av}</span></header>
+  <main>${screen()}</main></div></div>`;
 }
 function render(){
   const root=document.getElementById("root");
@@ -718,6 +779,7 @@ function render(){
   }
 }
 render();
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>
 </html>
